@@ -1,0 +1,56 @@
+<?php
+use Drupal\recurring_events\Entity\EventSeries;
+
+function lalg_recurring_event_support_form_alter(&$form, &$form_state, $form_id) {
+    if($form_id != 'eventseries_lalg_event_add_form' && $form_id != 'eventseries_lalg_event_edit_form') {
+        return;
+    }
+    $config = \Drupal::service('config.factory')->getEditable('recurring_events.eventseries.config');
+    $form['weekly_recurring_date']['widget'][0]['weekly_interval'] = [
+        "#title" => t("Interval"),
+        "#type" => "number",
+        "#default_value" => $config->get('weekly_interval') ?: 1,
+        "#min" => 1,
+        "#max" => 4,
+        "#step" => 1,
+        "#required" => false,
+        "#weight" => 0
+    ];
+    $form['actions']['submit']['#submit'][] = 'lalg_recurring_event_support_handler_submit';
+}
+
+function lalg_recurring_event_support_handler_submit(&$form, $form_state) {
+    $value = $form_state->getValue('weekly_recurring_date')[0]['weekly_interval'];
+    \Drupal::service('config.factory')
+    ->getEditable('recurring_events.eventseries.config')
+    ->set('weekly_interval', $value)
+    ->save();
+}
+
+//function lalg_recurring_event_support_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+
+function lalg_recurring_event_support_recurring_events_event_instances_pre_create_alter(&$event_instances, EventSeries $event) {
+    // Get Weekly interval
+    $weekly_interval = $event->weekly_recurring_date->weekly_interval;
+    // Get EventSeries start date
+    $weekly = $event->weekly_recurring_date->value;
+    $recur = $event->recur_type->value;
+
+    // Return if not weekly recur type or interval is 1.
+    if($weekly_interval == 1 || $recur != "weekly_recurring_date") {
+        return;
+    }
+
+
+    $start_date = new DateTime($weekly);
+
+    foreach ($event_instances as $key => $instance) {
+        $instance_date = new DateTime($instance['start_date']);
+        // Compare start date against each instance date
+        $diff = (floor($start_date->diff($instance_date)->days)+1)/7;
+        if($diff % $weekly_interval != 0) {
+            // unset the instance if it has a date at the wrong interval
+            unset($event_instances[$key]);
+        }
+    }   
+}
