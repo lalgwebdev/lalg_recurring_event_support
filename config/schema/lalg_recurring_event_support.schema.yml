@@ -1,0 +1,6 @@
+recurring_events.eventseries.config:
+  type: config_object
+  mapping:
+    weekly_interval:
+      type: integer
+      label: 'The interval between weeks with events in.'
