@@ -1,7 +1,7 @@
 name: LALG Recurring Event Support
 type: module
 description: Provides additional support for the Recurring Events module.
-version: '0.1'
+version: '0.2'
 package: Custom
 core_version_requirement: ^9
 
