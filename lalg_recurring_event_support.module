@@ -53,3 +53,12 @@ function lalg_recurring_event_support_recurring_events_event_instances_pre_creat
         }
     }   
 }
+
+/*
+ * hook_entity_type_build
+ */
+function lalg_recurring_event_support_entity_type_build(array &$entity_types) {
+    if(isset($entity_types['eventinstance'])) {
+        $entity_types['eventinstance']->setHandlerClass('access', 'Drupal\lalg_recurring_event_support\Access\LALGEventInstanceHandler');
+    }
+}
