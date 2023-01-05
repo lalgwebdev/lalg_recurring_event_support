@@ -62,3 +62,17 @@ function lalg_recurring_event_support_entity_type_build(array &$entity_types) {
         $entity_types['eventinstance']->setHandlerClass('access', 'Drupal\lalg_recurring_event_support\Access\LALGEventInstanceHandler');
     }
 }
+
+/*
+ * hook_entity_bundle_field_info
+ */
+function lalg_recurring_event_support_entity_bundle_field_info(EntityTypeInterface $entity_type, $bundle, array $base_field_definitions) {
+    $fields = [];
+    if ($entity_type->id() == 'eventseries' && $bundle == 'lalg_event' && !empty($base_field_definitions['title'])) {
+        $field = BaseFieldOverride::createFromBaseFieldDefinition($base_field_definitions['title'], $bundle);
+        $field->setLabel(t('Admin Title'))
+            ->setDescription(t('The administrative title for reference by admins.'));
+        $fields['title'] = $field;
+    }
+    return $fields;
+}
