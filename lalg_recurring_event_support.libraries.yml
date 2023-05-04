@@ -1,0 +1,7 @@
+lalg_recurring_event_support.create_form:
+  version: 1.x
+  js:
+    js/lalg_recurring_event_support_create_form.js: {}
+  dependencies:
+    - core/drupal
+    - core/jquery
