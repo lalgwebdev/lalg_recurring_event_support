@@ -17,6 +17,7 @@ function lalg_recurring_event_support_form_alter(&$form, &$form_state, $form_id)
         "#weight" => 0
     ];
     $form['actions']['submit']['#submit'][] = 'lalg_recurring_event_support_handler_submit';
+    $form['#attached']['library'][] = 'lalg_recurring_event_support/lalg_recurring_event_support.create_form';
 }
 
 function lalg_recurring_event_support_handler_submit(&$form, $form_state) {
