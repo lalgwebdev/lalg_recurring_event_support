@@ -1,5 +1,8 @@
 <?php
 use Drupal\recurring_events\Entity\EventSeries;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\Entity\BaseFieldOverride;
+
 
 function lalg_recurring_event_support_form_alter(&$form, &$form_state, $form_id) {
     if($form_id != 'eventseries_lalg_event_add_form' && $form_id != 'eventseries_lalg_event_edit_form') {
@@ -11,7 +14,7 @@ function lalg_recurring_event_support_form_alter(&$form, &$form_state, $form_id)
         "#type" => "number",
         "#default_value" => $config->get('weekly_interval') ?: 1,
         "#min" => 1,
-        "#max" => 52,
+        "#max" => 4,
         "#step" => 1,
         "#required" => false,
         "#weight" => 0
@@ -37,22 +40,21 @@ function lalg_recurring_event_support_recurring_events_event_instances_pre_creat
     $weekly = $event->weekly_recurring_date->value;
     $recur = $event->recur_type->value;
 
-    // Return if not weekly recur type or interval is 1.
+    // Return if not weekly recur type or interval is less than or equal to 1.
     if($weekly_interval <= 1 || $recur != "weekly_recurring_date") {
         return;
     }
-
     $start_date = new DateTime($weekly);
 
     foreach ($event_instances as $key => $instance) {
         $instance_date = new DateTime($instance['start_date']);
         // Compare start date against each instance date
-        $diff = floor(($start_date->diff($instance_date)->days)+1/7);
+        $diff = (floor($start_date->diff($instance_date)->days)+1)/7;
         if($diff % $weekly_interval != 0) {
             // unset the instance if it has a date at the wrong interval
             unset($event_instances[$key]);
         }
-    }   
+    }
 }
 
 /*
