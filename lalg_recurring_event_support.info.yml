@@ -1,9 +1,9 @@
 name: LALG Recurring Event Support
 type: module
 description: Provides additional support for the Recurring Events module.
-version: '0.7'
+version: '0.8'
 package: Custom
-core_version_requirement: ^9
+core_version_requirement: ^9 || ^10
 
 dependencies:
  - drupal:recurring_events
