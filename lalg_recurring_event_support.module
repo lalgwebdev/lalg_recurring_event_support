@@ -79,3 +79,17 @@ function lalg_recurring_event_support_entity_bundle_field_info(EntityTypeInterfa
     }
     return $fields;
 }
+
+/*
+ * hook_menu_local_tasks_alter
+ */
+function lalg_recurring_event_support_menu_local_tasks_alter(&$data, $route_name) {
+  if(!str_contains($route_name, 'entity.eventseries')) {
+    return;
+  }
+  foreach ($data['tabs'][0] as $href => $tab_data) {
+      if ($href == 'entity.eventseries.add_instance_form') {
+        unset($data['tabs'][0]['entity.eventseries.add_instance_form']);
+      }
+  }
+}
