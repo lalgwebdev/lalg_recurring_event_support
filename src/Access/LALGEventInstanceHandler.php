@@ -15,12 +15,10 @@ class LALGEventInstanceHandler extends EventInstanceAccessControlHandler {
         $result = parent::checkAccess($entity, $operation, $account);
         if(!$result->isAllowed()) {
             // Need GroupContentAccessControlHandler not EventSeriesAccessControlHandler
-            $manager = \Drupal::service('plugin.manager.group_content_enabler');
+            $manager = \Drupal::service('group_relation_type.manager');
             $type = 'group_recurring_events_series:' . $entity->getType();
-            if($manager->hasHandler($type, 'access')) {
-              $handler = $manager->getAccessControlHandler($type);
-              $result = $handler->entityAccess($entity->getEventSeries(), $operation, $account, TRUE);
-            }
+            $handler = $manager->getAccessControlHandler($type);
+            $result = $handler->entityAccess($entity->getEventSeries(), $operation, $account, TRUE);
         }
         return $result;
     }
