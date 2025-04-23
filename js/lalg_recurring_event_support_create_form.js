@@ -18,9 +18,9 @@
             var parent = $(this).closest('.form-wrapper');
             $(parent).find('input.form-date').each(function (index, item) {
               if (index == 1) {
-                if ($(item).val() == '') {
+                //if ($(item).val() == '') {
                   $(item).val($(start_date).val());
-                }
+                //}
               }
             });
           });
