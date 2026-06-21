@@ -5,3 +5,11 @@ lalg_recurring_event_support.create_form:
   dependencies:
     - core/drupal
     - core/jquery
+lalg_recurring_event_support.edit_instance_form:
+  version: 1.x
+  js:
+    js/lalg_recurring_event_support_edit_instance_form.js: { attributes: { defer: true } }
+  dependencies:
+    - core/drupal
+    - core/jquery
+    - core/editor
