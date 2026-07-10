@@ -36,6 +36,19 @@
 					editor.setData(seriesbooking);
 				}
             });
+
+			const seriescontactobject = $('.views-field-field-series-contact-details .field-content');
+            const textareaContact = context.querySelector(
+				'textarea[data-drupal-selector="edit-field-instance-contact-details-0-value"]');
+            const editorIdContact = textareaContact.dataset.ckeditor5Id;
+
+            waitForEditor(editorIdContact, function(editor) {
+                const currenteditordesc = $('<div>').html(editor.getData()).text().trim();
+                if (currenteditordesc === '') {
+					const seriescontact = seriescontactobject[0].innerHTML.replace(/<!--[\s\S]*?-->/g, '');
+					editor.setData(seriescontact);
+				}
+            });
 	  	}
 	}
 
