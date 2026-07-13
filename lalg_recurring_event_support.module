@@ -19,6 +19,16 @@ function lalg_recurring_event_support_form_alter(&$form, &$form_state, $form_id)
         "#required" => false,
         "#weight" => 0
     ];
+    $form['monthly_recurring_date']['widget'][0]['monthly_interval'] = [
+        "#title" => t("Interval"),
+        "#type" => "number",
+        "#default_value" => $config->get('monthly_interval') ?: 1,
+        "#min" => 1,
+        "#max" => 6,
+        "#step" => 1,
+        "#required" => false,
+        "#weight" => 0
+    ];
     $form['actions']['submit']['#submit'][] = 'lalg_recurring_event_support_handler_submit';
     $form['#attached']['library'][] = 'lalg_recurring_event_support/lalg_recurring_event_support.create_form';
 }
@@ -29,30 +39,51 @@ function lalg_recurring_event_support_handler_submit(&$form, $form_state) {
     ->getEditable('recurring_events.eventseries.config')
     ->set('weekly_interval', $value)
     ->save();
+    $value = $form_state->getValue('monthly_recurring_date')[0]['monthly_interval'];
+    \Drupal::service('config.factory')
+    ->getEditable('recurring_events.eventseries.config')
+    ->set('monthly_interval', $value)
+    ->save();
 }
 
-//function lalg_recurring_event_support_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function lalg_recurring_event_support_form_eventinstance_lalg_event_edit_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+    $form['#attached']['library'][] = 'lalg_recurring_event_support/lalg_recurring_event_support.edit_instance_form';
+}
 
 function lalg_recurring_event_support_recurring_events_event_instances_pre_create_alter(&$event_instances, EventSeries $event) {
-    // Get Weekly interval
-    $weekly_interval = $event->weekly_recurring_date->weekly_interval;
-    // Get EventSeries start date
-    $weekly = $event->weekly_recurring_date->value;
+    $monthly_interval = $event->monthly_recurring_date->monthly_interval; // Get Monthly interval
+    $weekly_interval = $event->weekly_recurring_date->weekly_interval; // Get Weekly interval
+    
     $recur = $event->recur_type->value;
 
-    // Return if not weekly recur type or interval is less than or equal to 1.
-    if($weekly_interval <= 1 || $recur != "weekly_recurring_date") {
+    $weekly = $event->weekly_recurring_date->value; // Get EventSeries start date
+    $monthly = $event->monthly_recurring_date->value; // Get start date
+
+    // Return if not monthly or weekly recur type
+    if(!(($recur == "monthly_recurring_date" && $monthly_interval > 1) || ($recur == "weekly_recurring_date" && $weekly_interval > 1))) {
         return;
     }
-    $start_date = new DateTime($weekly);
+    if($recur == "weekly_recurring_date") {
+        $start_date = new DateTime($weekly);
 
-    foreach ($event_instances as $key => $instance) {
-        $instance_date = new DateTime($instance['start_date']);
-        // Compare start date against each instance date
-        $diff = (floor($start_date->diff($instance_date)->days)+1)/7;
-        if($diff % $weekly_interval != 0) {
-            // unset the instance if it has a date at the wrong interval
-            unset($event_instances[$key]);
+        foreach ($event_instances as $key => $instance) {
+            $instance_date = new DateTime($instance['start_date']);
+            // Compare start date against each instance date
+            $diff = (floor($start_date->diff($instance_date)->days)+1)/7;
+            if($diff % $weekly_interval != 0) {
+                unset($event_instances[$key]); // unset the instance if it has a date at the wrong interval
+            }
+        }
+    } else if($recur == "monthly_recurring_date") {
+        $start_date = new DateTime($monthly);
+
+        foreach($event_instances as $key => $instance) {
+            $instance_date = new DateTime($instance['start_date']);
+            $instance_date->setTime(0,0);
+            $diff = $start_date->diff($instance_date);
+            if($diff->m % $monthly_interval != 0) {
+                unset($event_instances[$key]); // unset the instance if it has a date at the wrong interval
+            }
         }
     }
 }
