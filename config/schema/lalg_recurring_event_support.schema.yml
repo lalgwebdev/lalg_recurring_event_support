@@ -4,3 +4,6 @@ recurring_events.eventseries.config:
     weekly_interval:
       type: integer
       label: 'The interval between weeks with events in.'
+    monthly_interval:
+      type: integer
+      label: 'The interval between months with events in.'
