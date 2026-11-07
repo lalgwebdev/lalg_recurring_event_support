@@ -1,8 +1,11 @@
 <?php
-use Drupal\recurring_events\Entity\EventSeries;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\Entity\BaseFieldOverride;
-
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Url;
+use Drupal\group\Entity\GroupRelationship;
+use Drupal\recurring_events\Entity\EventSeries;
+use Drupal\recurring_events\Form\EventSeriesCloneForm;
 
 function lalg_recurring_event_support_form_alter(&$form, &$form_state, $form_id) {
     if($form_id != 'eventseries_lalg_event_add_form' && $form_id != 'eventseries_lalg_event_edit_form') {
@@ -44,6 +47,44 @@ function lalg_recurring_event_support_handler_submit(&$form, $form_state) {
     ->getEditable('recurring_events.eventseries.config')
     ->set('monthly_interval', $value)
     ->save();
+}
+
+function lalg_recurring_event_support_form_eventseries_lalg_event_clone_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+    $form['actions']['submit']['#submit'][] = 'lalg_recurring_event_support_attach_cloned_series_to_group';
+}
+
+function lalg_recurring_event_support_attach_cloned_series_to_group(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+    $form_object = $form_state->getFormObject();
+
+    if (!$form_object instanceof EventSeriesCloneForm) {
+        return;
+    }
+    
+    // Retrieve the cloned entity from the form object.
+    $series = $form_object->getEntity();
+    if (!$series || $series->isNew()) {
+        return;
+    }
+
+    // Retrieve the Group from the route.
+    $group = \Drupal::routeMatch()->getParameter('group');
+    if (!$group instanceof \Drupal\group\Entity\GroupInterface) {
+        if (!is_numeric($group)) {
+            return;
+        }
+
+        $group = \Drupal::entityTypeManager()
+            ->getStorage('group')
+            ->load($group);
+    }
+    if (!$group) {
+        return;
+    }
+
+    $group->addRelationship(
+        $series,
+        'group_recurring_events_series:' . $series->bundle()
+    );
 }
 
 function lalg_recurring_event_support_form_eventinstance_lalg_event_edit_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
@@ -116,13 +157,34 @@ function lalg_recurring_event_support_entity_bundle_field_info(EntityTypeInterfa
 /*
  * hook_menu_local_tasks_alter
  */
-function lalg_recurring_event_support_menu_local_tasks_alter(&$data, $route_name) {
-  if(!str_contains($route_name, 'entity.eventseries')) {
-    return;
-  }
-  foreach ($data['tabs'][0] as $href => $tab_data) {
-      if ($href == 'entity.eventseries.add_instance_form') {
-        unset($data['tabs'][0]['entity.eventseries.add_instance_form']);
-      }
-  }
+function lalg_recurring_event_support_menu_local_tasks_alter(&$data, $route_name, Drupal\Core\Cache\CacheableMetadata $cacheability) {
+    if(!str_contains($route_name, 'entity.eventseries')) {
+        return;
+    }
+    // Remove Add Instance tab.
+    unset($data['tabs'][0]['entity.eventseries.add_instance_form']);
+    
+    $eventseries = \Drupal::routeMatch()->getParameter('eventseries');
+    if (!$eventseries) {
+        return;
+    }
+
+    $relationships = GroupRelationship::loadByEntity($eventseries);
+    $group_id = $relationships ? reset($relationships)->getGroup()->id() : NULL;
+    if ($group_id === NULL) {
+        return;
+    }
+
+    // Change the Clone tab's destination for Event Series with a group.
+    if (isset($data['tabs'][0]['eventseries.clone_form'])) {
+        $data['tabs'][0]['eventseries.clone_form']['#link']['url'] = Url::fromRoute(
+            'lalg.eventseries.clone',
+                [
+                    'group' => $group_id,
+                    'eventseries' => $eventseries->id(),
+                ],
+        );
+        $cacheability->addCacheableDependency($eventseries);
+        $cacheability->addCacheableDependency($group);
+    }
 }
