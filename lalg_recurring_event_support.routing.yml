@@ -1,0 +1,15 @@
+lalg.eventseries.clone:
+  path: 'group/{group}/eventseries/{eventseries}/clone'
+  defaults:
+    _entity_form: eventseries.clone
+    _title_callback: '\Drupal\recurring_events\Controller\EventSeriesController::clonePageTitle'
+  requirements:
+    _entity_access: 'eventseries.clone'
+    eventseries: \d+
+  options:
+    _recurring_events_operation_route: TRUE
+    parameters:
+      group:
+        type: entity:group
+      eventseries:
+        type: entity:eventseries
